@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+  <head>
+
+  	<style type="text/css" media="screen">
+  		#map-canvas{
+  			/*height: 500px;*/
+        /*width: 800px;*/
+       /*background-image: url(mapImage.jpg);*/
+
+  		}
+  		
+  	</style>
+
+  	<title> Image Experiment </title>
+
+  	<script src="https://code.jquery.com/jquery-3.1.0.slim.min.js" integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8=" crossorigin="anonymous"></script>
+
+  	<script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+
+	 <script src="app.js" type="text/javascript" charset="utf-8" async defer></script>
+	
+  </head>
+
+  <body>
+
+
+  <div id='map-canvas'></div>
+
+  <script>
+
+  	$(document).ready(function(){
+
+      var zones = [
+        {name:"Zone1",  points:[643,148,770,148,770,317,643,317,643,148]},
+        {name:"Zone2",  points:[770,166,932,165,932,341,770,341,770,165]},
+        {name:"Zone3",  points:[564,318,733,318,733,456,565,456,564,318]},
+        {name:"Zone4",  points:[535,457,687,457,687,613,535,613,535,457]},
+        {name:"Zone5",  points:[593,615,734,615,734,701,593,701,593,615]}
+      ];
+
+      d3.csv('data.csv')
+        .row(function(d) { return { start : d.start, end : d.end, value : +d.count, path : d.path_id }; })
+        .get(function(error, rows){ 
+
+            // for(var i in rows){
+
+            //   var loc = rows[i]['location'];
+
+            //   var arr = loc.split(":");
+
+            //   rows[i]['location'] = arr;
+
+            // }
+
+            data = rows;
+
+            initMap(zones,data);
+        })
+
+
+  	})
+  	
+  </script>
+
+  </body>
+
+</html>
