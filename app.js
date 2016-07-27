@@ -1,4 +1,4 @@
-function initMap(zones,data){
+function initCircles(zones,data){
 
 	var minMax = getMinMax(data);
 
@@ -9,7 +9,7 @@ function initMap(zones,data){
 	var imgData = [1];
 
 	var svg = d3.select('#map-canvas').append("svg")
-							  .attr({'width': 1100, 'height': 900});
+							  .attr({'width': 1100, 'height': 900, 'class' : 'parentSvg'});
 
 	var mapImage = svg.selectAll('.mapImage')
 					  .data(imgData);
@@ -38,10 +38,11 @@ function initMap(zones,data){
 
 			 			      return str;
 			 			  },
-			 	'fill':'none',
+			 	'fill':'#b2b2b2',
+			 	"opacity": 0.6,
 			 	'stroke':'#666',
 			 	'class':'zones',
-			 	'stroke-width':3
+			 	'stroke-width':0
 			  })
 			 .each(function(d,i){
 
@@ -61,26 +62,55 @@ function initMap(zones,data){
 								  	'height': 40,
 								  	'x': (xyBox[0] - (4 * padding)),
 								  	'y': (xyBox[1] - (3 * padding)),
+								  	'xPoint': bBoxVal.x,
+								  	'yPoint': bBoxVal.y,
 								  	'zoneVal': d.name,
 								  	'dataVal': d.points,
+								  	'numberedVal': i,
 								  	'cursor': 'pointer',
-								  	'class': 'markers'
+								  	'class': 'markers',
+								  	'value': function(){
+								  		var sel = d3.select(this).attr('zoneVal');
+
+								  		var val;
+
+								  		for(var i in data){
+
+								  			if(data[i]['zone'] == sel){
+								  				val = data[i]['value'];
+								  				return val;
+								  			}
+								  		}
+
+								  		return 0;
+
+								  		
+								  	}
 								  })
 								  .on('click', function(){
 
-								  	var existingPaths = svg.selectAll('.plottedPath').remove();
+								  	var iVal = d3.select(this).attr('numberedVal');
 
+								  	//var existingPaths = svg.selectAll('.childG').remove();
 
-								  	var start = d3.select(this).attr('zoneVal');
-								  	var plotArray = [];
-								  	for(var i in data){
-								  		if(data[i]['start'] == start){
-								  			plotArray.push(data[i]);
-								  		}
-								  	}
-								  	for(var i in plotArray){
-								  		plotPath(plotArray[i]);
-								  	}
+								  	d3.selectAll('.baseCircles').remove();
+
+								  	var sel = d3.select(this).attr('zoneVal');
+
+								  	var originX = d3.select(this).attr('xPoint');
+
+								  	var originY = d3.select(this).attr('yPoint');
+
+								  	var val = d3.select(this).attr('value');
+
+								  	var total = data.length;
+
+								  	var num = getNumberOfCircles(val);
+
+								  	console.log(num);
+
+								  	drawCluster(num,originX,originY,iVal);
+
 
 								  });
 
@@ -100,67 +130,149 @@ function initMap(zones,data){
 
 			 })
 
-			 function plotPath(data){
-
-			 	var start = [];
-			 	var end = [];
-
-			 	var imageSize = 40;
-
-			 	var padding = imageSize/2;
-
-			 	var nodes = svg.selectAll('.markers');
-
-			 	var len = nodes[0].length;
-			 				   
-			 	for(var i = 0; i < len; i++){
 
 
-			 		var selected = d3.select(nodes[0][i]);
+			 function getNumberOfCircles(val){
 
-			 		var zoneVal = selected.attr('zoneVal');
+			 	var val = parseInt(val);
 
-			 		if( zoneVal == data['start']){
-			 			var x = parseFloat(selected.attr('x')) + padding;
-			 			var y = parseFloat(selected.attr('y')) + imageSize;
-			 			start = [x,y];
-			 		}
+			 	var linearRange = d3.scale.linear()
+			 						.rangeRound([0,40])
+			 						.domain([0,maxCount]);
 
-			 		if(zoneVal == data['end']){
-			 			var x = parseFloat(selected.attr('x')) + padding;
-			 			var y = parseFloat(selected.attr('y')) + imageSize;
-			 			end = [x,y];
-			 		}
+			 	var num = linearRange(val);
 
-			 	}
-
-			 	var count = data['value'];
-
-			 	lineFunction(start, end, count);
-			 }
-
-			 function lineFunction(start,end, count){
-
-			 	var width = getLineWidth(count);
-
-			 	var line = svg.append('line')
-			 				   .attr({'x1': start[0], 'y1': start[1], 'x2': end[0], 'y2': end[1]})
-			 				   .style({'stroke': '#000', 'fill': '#000'})
-			 				   .attr({'stroke-width':width, 'class': 'plottedPath'});
+			 	return num;
 
 			 }
 
-			 function getLineWidth(count){
+			 function drawCluster(num, valX, valY, iVal){
 
-			 	var xScale = d3.scale.linear()
-			 					.range([1,6])
-			 					.domain([minCount, maxCount]);
+			 	//var colorArr = ['#FCFFF5','#D1DBBD','#91AA9D','#3E606F','#193441'];
 
-			 	var width = xScale(count);
+			 	var colorArr = ['#1695a3','#1f8a70','#3E606F','#193441','#6B0C22'];
+			 	var n = num;
+			 	var m = 1;
 
-			 	return width;
+			 	var widthN = 100; var heightN = 100; var padding = 1.5; var maxRadius = 12; var clusterPadding = 1;
+
+			 	var color = d3.scale.linear().range(colorArr).domain(d3.range(n));
+
+			 	var clusters = new Array(m);
+
+			 	var nodes = d3.range(n).map(function() {
+
+							  var i = Math.floor(Math.random() * m),
+							      r = Math.sqrt((i + 1) / m * -Math.log(Math.random())) * maxRadius,
+							      d = {
+							      	dVal: iVal,
+							        cluster: i,
+							        radius: r,
+							        x: Math.cos(i / m * 2 * Math.PI) * 100 + widthN / 2 + Math.random(),
+							        y: Math.sin(i / m * 2 * Math.PI) * 100 + heightN / 2 + Math.random()
+							      };
+							  if (!clusters[i] || (r > clusters[i].radius)) clusters[i] = d;
+							  return d;
+							});
+
+			 	var force = d3.layout.force()
+							    .nodes(nodes)
+							    .size([widthN, heightN])
+							    .gravity(.02)
+							    .charge(0)
+							    .on("tick", tick)
+							    .start();
+
+				var svgCluster = d3.select(".parentSvg").append("g")
+								   .attr({'class': 'childG', 'transform': 'translate(' + valX + ',' + valY + ')'});
+							//.attr({'width': widthN, 'height': heightN, 'class': 'clusterSvg', 'x': valX, 'y': valY});
+
+				var node = svgCluster.selectAll("circle")
+							  .data(nodes)
+							  .enter().append("circle")
+							  .style({
+							  	"fill": function(d) {
+							  		return color(d.dVal); 
+							  	},
+							  	'fill-opacity': 0.6,
+							  	"stroke": function(d) {
+							  		return color(d.dVal); 
+							  	},
+							  	'stroke-opacity': 1
+							  })
+							  .call(force.drag);
+
+							node.transition()
+							    .duration(750)
+							    .delay(function(d, i) { return i * 5; })
+							    .attrTween("r", function(d) {
+							      var i = d3.interpolate(0, d.radius);
+							      return function(t) { return d.radius = i(t); };
+							    });
+
+							function tick(e) {
+							  node
+							      .each(cluster(10 * e.alpha * e.alpha))
+							      .each(collide(.5))
+							      .attr("cx", function(d) {
+							      		return d.x; 
+							      	})
+							      .attr("cy", function(d) { return d.y; });
+							}
+
+				// Move d to be adjacent to the cluster node.
+				function cluster(alpha) {
+				  return function(d) {
+				    var cluster = clusters[d.cluster];
+				    if (cluster === d) return;
+				    var x = d.x - cluster.x,
+				        y = d.y - cluster.y,
+				        l = Math.sqrt(x * x + y * y),
+				        r = d.radius + cluster.radius;
+				    if (l != r) {
+				      l = (l - r) / l * alpha;
+				      d.x -= x *= l;
+				      d.y -= y *= l;
+				      cluster.x += x;
+				      cluster.y += y;
+				    }
+				  };
+				}
+
+				// Resolves collisions between d and all other circles.
+				function collide(alpha) {
+				  var quadtree = d3.geom.quadtree(nodes);
+				  return function(d) {
+				    var r = d.radius + maxRadius + Math.max(padding, clusterPadding),
+				        nx1 = d.x - r,
+				        nx2 = d.x + r,
+				        ny1 = d.y - r,
+				        ny2 = d.y + r;
+				    quadtree.visit(function(quad, x1, y1, x2, y2) {
+				      if (quad.point && (quad.point !== d)) {
+				        var x = d.x - quad.point.x,
+				            y = d.y - quad.point.y,
+				            l = Math.sqrt(x * x + y * y),
+				            r = d.radius + quad.point.radius + (d.cluster === quad.point.cluster ? padding : clusterPadding);
+				        if (l < r) {
+				          l = (l - r) / l * alpha;
+				          d.x -= x *= l;
+				          d.y -= y *= l;
+				          quad.point.x += x;
+				          quad.point.y += y;
+				        }
+				      }
+				      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+				    });
+				  };
+				}
+
+				//node.attr("transform", 'translate(' + originX + ',' + originY + ')');
+
 
 			 }
+
+
 }
 
 
@@ -168,12 +280,12 @@ function getMinMax(data){
 
 	var obj = {};
 
-	var min = 0; var max = 0;
+	var min = 0; var max = 10;
 
 	for(var i in data){
 
-		if(data[i]['count'] > max){
-			max = data[i]['count'];
+		if(data[i]['value'] > max){
+			max = data[i]['value'];
 		}
 
 	}
@@ -182,8 +294,8 @@ function getMinMax(data){
 
 	for(var j in data){
 
-		if(data[j]['count'] < min){
-			min = data[j]['count'];
+		if(data[j]['value'] < min){
+			min = data[j]['value'];
 		}
 	}
 

@@ -1,7 +1,6 @@
-start,end,count,path_id
-Zone2,Zone3,4453,1
-Zone3,Zone2,1999,2
-Zone1,Zone3,1832,3
-Zone3,Zone1,15,4
-Zone1,Zone2,244,5
-Zone2,Zone1,237,6
+start,count
+Zone2,4453
+Zone3,1999
+Zone1,1832
+Zone4,1200
+Zone5,2442

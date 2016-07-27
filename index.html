@@ -12,7 +12,7 @@
   		
   	</style>
 
-  	<title> Image Experiment </title>
+  	<title> Circle Experiment </title>
 
   	<script src="https://code.jquery.com/jquery-3.1.0.slim.min.js" integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8=" crossorigin="anonymous"></script>
 
@@ -40,22 +40,12 @@
       ];
 
       d3.csv('data.csv')
-        .row(function(d) { return { start : d.start, end : d.end, value : +d.count, path : d.path_id }; })
-        .get(function(error, rows){ 
-
-            // for(var i in rows){
-
-            //   var loc = rows[i]['location'];
-
-            //   var arr = loc.split(":");
-
-            //   rows[i]['location'] = arr;
-
-            // }
+        .row(function(d) { return { zone: d.start,value : +d.count}; })
+        .get(function(error, rows){
 
             data = rows;
 
-            initMap(zones,data);
+            initCircles(zones,data);
         })
 
 
